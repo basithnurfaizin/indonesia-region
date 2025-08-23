@@ -17,7 +17,7 @@ Add the dependency to your Maven `pom.xml`:
 ```xml
 <dependency>
   <groupId>io.github.basithnurfaizin</groupId>
-  <artifactId>indonesia-region</artifactId>
+  <artifactId>indonesiaregion</artifactId>
   <version>1.0-SNAPSHOT</version>
 </dependency>
 ```
