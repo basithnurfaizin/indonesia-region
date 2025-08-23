@@ -1,7 +1,7 @@
 package io.github.basithnurfaizin.indonesia.loader;
 
 import com.opencsv.CSVReader;
-import io.github.basithnurfaizin.indonesia.Province;
+import io.github.basithnurfaizin.indonesia.model.Province;
 
 import java.io.InputStreamReader;
 import java.util.HashMap;

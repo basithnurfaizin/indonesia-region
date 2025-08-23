@@ -1,4 +1,4 @@
-package io.github.basithnurfaizin.indonesia;
+package io.github.basithnurfaizin.indonesia.model;
 
 public class Province {
     private String code;
