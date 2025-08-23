@@ -23,8 +23,12 @@ public class ProvinceLoader {
         if (line[0].equalsIgnoreCase("code")) continue;
         provinces.put(
             line[0],
-            new Province(
-                line[0], line[1], Double.parseDouble(line[2]), Double.parseDouble(line[3])));
+            Province.builder()
+                .code(line[0])
+                .name(line[1])
+                .latitude(Double.parseDouble(line[2]))
+                .longitude(Double.parseDouble(line[3]))
+                .build());
       }
     } catch (Exception e) {
       throw new RuntimeException("Failed to load provinces", e);

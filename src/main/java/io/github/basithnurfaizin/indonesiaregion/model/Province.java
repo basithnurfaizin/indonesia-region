@@ -1,5 +1,17 @@
 package io.github.basithnurfaizin.indonesiaregion.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@AllArgsConstructor
+@NoArgsConstructor
 public class Province {
   private String code;
 
@@ -9,42 +21,5 @@ public class Province {
 
   private double longitude;
 
-  public Province(String code, String name, double latitude, double longitude) {
-    this.code = code;
-    this.name = name;
-    this.latitude = latitude;
-    this.longitude = longitude;
-  }
-
-  public String getCode() {
-    return code;
-  }
-
-  public void setCode(String code) {
-    this.code = code;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public void setName(String name) {
-    this.name = name;
-  }
-
-  public double getLatitude() {
-    return latitude;
-  }
-
-  public void setLatitude(double latitude) {
-    this.latitude = latitude;
-  }
-
-  public double getLongitude() {
-    return longitude;
-  }
-
-  public void setLongitude(double longitude) {
-    this.longitude = longitude;
-  }
+  private List<City> cities;
 }
