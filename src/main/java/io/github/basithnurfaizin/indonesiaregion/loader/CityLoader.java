@@ -23,12 +23,13 @@ public class CityLoader {
         if (line[0].equalsIgnoreCase("code")) continue;
         cities.put(
             line[0],
-            new City(
-                line[0],
-                line[1],
-                line[2],
-                Double.parseDouble(line[3]),
-                Double.parseDouble(line[4])));
+                City.builder()
+                        .code(line[0])
+                        .name(line[2])
+                        .provinceCode(line[1])
+                        .latitude(Double.parseDouble(line[3]))
+                        .longitude(Double.parseDouble(line[4]))
+                        .build());
       }
     } catch (Exception e) {
       throw new RuntimeException("Failed to load cities", e);

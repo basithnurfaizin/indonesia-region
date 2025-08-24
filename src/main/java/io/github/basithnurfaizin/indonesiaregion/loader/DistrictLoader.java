@@ -23,12 +23,13 @@ public class DistrictLoader {
         if (line[0].equalsIgnoreCase("code")) continue;
         district.put(
             line[0],
-            new District(
-                line[0],
-                line[2],
-                line[1],
-                parseDoubleOrDefault(line[3]), // latitude
-                parseDoubleOrDefault(line[4])));
+                District.builder()
+                        .code(line[0])
+                        .name(line[2])
+                        .cityCode(line[1])
+                        .latitude(parseDoubleOrDefault(line[3]))
+                        .longitude(parseDoubleOrDefault(line[4]))
+                        .build());
       }
     } catch (Exception e) {
       throw new RuntimeException("Failed to load cities", e);

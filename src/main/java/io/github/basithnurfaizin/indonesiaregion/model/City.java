@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -18,4 +20,5 @@ public class City {
   private String name;
   private Double latitude;
   private Double longitude;
+  private List<District> districts;
 }

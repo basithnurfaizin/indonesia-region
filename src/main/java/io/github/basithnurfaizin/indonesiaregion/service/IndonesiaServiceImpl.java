@@ -65,6 +65,46 @@ public class IndonesiaServiceImpl implements IndonesiaService {
     return filterAndSort(stream, keyword, Village::getCode, Village::getName, Village::getCode);
   }
 
+  @Override
+  public Province getProvince(String provinceCode, List<String> includes) {
+
+    Province province = provinces.get(provinceCode);
+
+    if (province == null) {
+      return null;
+    }
+
+    Province result = new Province();
+    result.setCode(province.getCode());
+    result.setName(province.getName());
+    result.setLatitude(province.getLatitude());
+    result.setLongitude(province.getLongitude());
+
+
+    if (includes != null && includes.contains("cities")) {
+      List<City> cities = getCities(province.getCode(), null);
+
+      if (includes.contains("districts")) {
+        cities.parallelStream().forEach(city -> {
+          List<District> districts = getDistricts(city.getCode(), null);
+
+          if (includes.contains("villages")) {
+            districts.parallelStream().forEach(district -> {
+              List<Village> villages = getVillages(district.getCode(), null);
+              district.setVillages(villages);
+            });
+          }
+
+          city.setDistricts(districts);
+        });
+      }
+
+      result.setCities(cities);
+    }
+
+    return result;
+  }
+
   private static boolean isNotBlank(String str) {
     return str != null && !str.isBlank();
   }
