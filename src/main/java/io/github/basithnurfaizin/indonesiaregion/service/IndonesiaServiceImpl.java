@@ -67,42 +67,110 @@ public class IndonesiaServiceImpl implements IndonesiaService {
 
   @Override
   public Province getProvince(String provinceCode, List<String> includes) {
-
     Province province = provinces.get(provinceCode);
-
     if (province == null) {
       return null;
     }
 
-    Province result = new Province();
-    result.setCode(province.getCode());
-    result.setName(province.getName());
-    result.setLatitude(province.getLatitude());
-    result.setLongitude(province.getLongitude());
+    Province result = copyProvinceProperties(province);
 
-
-    if (includes != null && includes.contains("cities")) {
+    if (shouldInclude(includes, "cities")) {
       List<City> cities = getCities(province.getCode(), null);
-
-      if (includes.contains("districts")) {
-        cities.parallelStream().forEach(city -> {
-          List<District> districts = getDistricts(city.getCode(), null);
-
-          if (includes.contains("villages")) {
-            districts.parallelStream().forEach(district -> {
-              List<Village> villages = getVillages(district.getCode(), null);
-              district.setVillages(villages);
-            });
-          }
-
-          city.setDistricts(districts);
-        });
-      }
-
+      loadNestedData(cities, includes);
       result.setCities(cities);
     }
 
     return result;
+  }
+
+  @Override
+  public City getCity(String cityCode, List<String> includes) {
+    City city = cities.get(cityCode);
+    if (city == null) {
+      return null;
+    }
+
+    City result = copyCityProperties(city);
+
+    if (shouldInclude(includes, "districts")) {
+      List<District> districts = getDistricts(city.getCode(), null);
+      loadVillagesForDistricts(districts, includes);
+      result.setDistricts(districts);
+    }
+
+    return result;
+  }
+
+  @Override
+  public District getDistrict(String districtCode, List<String> includes) {
+    District district = districts.get(districtCode);
+    if (district == null) {
+      return null;
+    }
+
+    District result = copyDistrictProperties(district);
+
+    if (shouldInclude(includes, "villages")) {
+      List<Village> villages = getVillages(district.getCode(), null);
+      result.setVillages(villages);
+    }
+
+    return result;
+  }
+
+  // Helper methods
+  private boolean shouldInclude(List<String> includes, String item) {
+    return includes != null && includes.contains(item);
+  }
+
+  private Province copyProvinceProperties(Province source) {
+    Province result = new Province();
+    result.setCode(source.getCode());
+    result.setName(source.getName());
+    result.setLatitude(source.getLatitude());
+    result.setLongitude(source.getLongitude());
+    return result;
+  }
+
+  private City copyCityProperties(City source) {
+    City result = new City();
+    result.setCode(source.getCode());
+    result.setName(source.getName());
+    result.setLatitude(source.getLatitude());
+    result.setLongitude(source.getLongitude());
+    return result;
+  }
+
+  private District copyDistrictProperties(District source) {
+    District result = new District();
+    result.setCode(source.getCode());
+    result.setName(source.getName());
+    result.setLatitude(source.getLatitude());
+    result.setLongitude(source.getLongitude());
+    return result;
+  }
+
+  private void loadNestedData(List<City> cities, List<String> includes) {
+    if (shouldInclude(includes, "districts")) {
+      cities.parallelStream()
+          .forEach(
+              city -> {
+                List<District> districts = getDistricts(city.getCode(), null);
+                loadVillagesForDistricts(districts, includes);
+                city.setDistricts(districts);
+              });
+    }
+  }
+
+  private void loadVillagesForDistricts(List<District> districts, List<String> includes) {
+    if (shouldInclude(includes, "villages")) {
+      districts.parallelStream()
+          .forEach(
+              district -> {
+                List<Village> villages = getVillages(district.getCode(), null);
+                district.setVillages(villages);
+              });
+    }
   }
 
   private static boolean isNotBlank(String str) {

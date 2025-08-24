@@ -16,4 +16,8 @@ public interface IndonesiaService {
   List<Village> getVillages(String districtCode, String keyword);
 
   Province getProvince(String provinceCode, List<String> includes);
+
+  City getCity(String cityCode, List<String> includes);
+
+  District getDistrict(String districtCode, List<String> includes);
 }

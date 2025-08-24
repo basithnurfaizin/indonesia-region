@@ -34,13 +34,13 @@ public class App {
 
     System.out.println("villages " + villages.size());
 
-    Province province = indonesiaService.getProvince("32", List.of("cities", "districts", "villages"));
+    Province province =
+        indonesiaService.getProvince("32", List.of("cities", "districts", "villages"));
 
     System.out.println("province : " + province.getName());
     System.out.println(province.getCities().size());
     System.out.println(province.getCities().get(0).getDistricts().size());
     System.out.println(province.getCities().get(0).getDistricts().get(0).getVillages().size());
-
 
     long endTime = System.nanoTime(); // end timer
 
@@ -48,6 +48,5 @@ public class App {
     double durationInMilliseconds = durationInNanoseconds / 1_000_000.0;
 
     System.out.println("Execution time: " + durationInMilliseconds + " ms");
-
   }
 }

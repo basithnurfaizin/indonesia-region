@@ -413,4 +413,454 @@ class IndonesiaServiceImplTest {
       }
     }
   }
+
+  @Nested
+  @DisplayName("Individual Province Retrieval Tests")
+  class ProvinceRetrievalTests {
+
+    @Test
+    @DisplayName("Should return province without nested data when no includes provided")
+    void shouldReturnProvinceWithoutNestedDataWhenNoIncludes() {
+      // Get a valid province code first
+      List<Province> allProvinces = indonesiaService.getProvinces(null);
+      assertFalse(allProvinces.isEmpty());
+
+      String provinceCode = allProvinces.get(0).getCode();
+      Province province = indonesiaService.getProvince(provinceCode, null);
+
+      assertNotNull(province);
+      assertEquals(provinceCode, province.getCode());
+      assertNotNull(province.getName());
+      assertNull(province.getCities()); // Should not include cities
+    }
+
+    @Test
+    @DisplayName("Should return province without nested data when empty includes provided")
+    void shouldReturnProvinceWithoutNestedDataWhenEmptyIncludes() {
+      List<Province> allProvinces = indonesiaService.getProvinces(null);
+      assertFalse(allProvinces.isEmpty());
+
+      String provinceCode = allProvinces.get(0).getCode();
+      Province province = indonesiaService.getProvince(provinceCode, List.of());
+
+      assertNotNull(province);
+      assertEquals(provinceCode, province.getCode());
+      assertNull(province.getCities()); // Should not include cities
+    }
+
+    @Test
+    @DisplayName("Should return province with cities when cities included")
+    void shouldReturnProvinceWithCitiesWhenCitiesIncluded() {
+      List<Province> allProvinces = indonesiaService.getProvinces(null);
+      assertFalse(allProvinces.isEmpty());
+
+      String provinceCode = allProvinces.get(0).getCode();
+      Province province = indonesiaService.getProvince(provinceCode, List.of("cities"));
+
+      assertNotNull(province);
+      assertEquals(provinceCode, province.getCode());
+      assertNotNull(province.getCities()); // Should include cities
+
+      // Verify cities belong to this province
+      assertTrue(
+          province.getCities().stream()
+              .allMatch(city -> provinceCode.equalsIgnoreCase(city.getProvinceCode())));
+
+      // Cities should not have nested districts
+      if (!province.getCities().isEmpty()) {
+        assertNull(province.getCities().get(0).getDistricts());
+      }
+    }
+
+    @Test
+    @DisplayName("Should return province with cities and districts when both included")
+    void shouldReturnProvinceWithCitiesAndDistrictsWhenBothIncluded() {
+      List<Province> allProvinces = indonesiaService.getProvinces(null);
+      assertFalse(allProvinces.isEmpty());
+
+      String provinceCode = allProvinces.get(0).getCode();
+      Province province =
+          indonesiaService.getProvince(provinceCode, List.of("cities", "districts"));
+
+      assertNotNull(province);
+      assertEquals(provinceCode, province.getCode());
+      assertNotNull(province.getCities());
+
+      // Check if cities have districts loaded
+      if (!province.getCities().isEmpty()) {
+        City firstCity = province.getCities().get(0);
+        assertNotNull(firstCity.getDistricts());
+
+        // Verify districts belong to the city
+        assertTrue(
+            firstCity.getDistricts().stream()
+                .allMatch(
+                    district -> firstCity.getCode().equalsIgnoreCase(district.getCityCode())));
+
+        // Districts should not have villages yet
+        if (!firstCity.getDistricts().isEmpty()) {
+          assertNull(firstCity.getDistricts().get(0).getVillages());
+        }
+      }
+    }
+
+    @Test
+    @DisplayName("Should return province with full hierarchy when all includes provided")
+    void shouldReturnProvinceWithFullHierarchyWhenAllIncludesProvided() {
+      List<Province> allProvinces = indonesiaService.getProvinces(null);
+      assertFalse(allProvinces.isEmpty());
+
+      String provinceCode = allProvinces.get(0).getCode();
+      Province province =
+          indonesiaService.getProvince(provinceCode, List.of("cities", "districts", "villages"));
+
+      assertNotNull(province);
+      assertEquals(provinceCode, province.getCode());
+      assertNotNull(province.getCities());
+
+      if (!province.getCities().isEmpty()) {
+        City firstCity = province.getCities().get(0);
+        assertNotNull(firstCity.getDistricts());
+
+        if (!firstCity.getDistricts().isEmpty()) {
+          District firstDistrict = firstCity.getDistricts().get(0);
+          assertNotNull(firstDistrict.getVillages());
+
+          // Verify villages belong to the district
+          assertTrue(
+              firstDistrict.getVillages().stream()
+                  .allMatch(
+                      village ->
+                          firstDistrict.getCode().equalsIgnoreCase(village.getDistrictCode())));
+        }
+      }
+    }
+
+    @Test
+    @DisplayName("Should return null for non-existent province code")
+    void shouldReturnNullForNonExistentProvinceCode() {
+      Province province = indonesiaService.getProvince("999", List.of("cities"));
+      assertNull(province);
+    }
+
+    @Test
+    @DisplayName("Should ignore invalid includes parameters")
+    void shouldIgnoreInvalidIncludesParameters() {
+      List<Province> allProvinces = indonesiaService.getProvinces(null);
+      assertFalse(allProvinces.isEmpty());
+
+      String provinceCode = allProvinces.get(0).getCode();
+      Province province =
+          indonesiaService.getProvince(
+              provinceCode, List.of("cities", "invalid", "districts", "unknown"));
+
+      assertNotNull(province);
+      assertNotNull(province.getCities()); // Should include cities
+
+      // Should include districts because "districts" was in the list
+      if (!province.getCities().isEmpty()) {
+        assertNotNull(province.getCities().get(0).getDistricts());
+      }
+    }
+
+    @Test
+    @DisplayName("Should preserve original province properties")
+    void shouldPreserveOriginalProvinceProperties() {
+      List<Province> allProvinces = indonesiaService.getProvinces(null);
+      assertFalse(allProvinces.isEmpty());
+
+      String provinceCode = allProvinces.get(0).getCode();
+      Province originalProvince = allProvinces.get(0);
+      Province retrievedProvince = indonesiaService.getProvince(provinceCode, List.of("cities"));
+
+      assertEquals(originalProvince.getCode(), retrievedProvince.getCode());
+      assertEquals(originalProvince.getName(), retrievedProvince.getName());
+      assertEquals(originalProvince.getLatitude(), retrievedProvince.getLatitude());
+      assertEquals(originalProvince.getLongitude(), retrievedProvince.getLongitude());
+    }
+  }
+
+  @Nested
+  @DisplayName("Individual City Retrieval Tests")
+  class CityRetrievalTests {
+
+    @Test
+    @DisplayName("Should return city without nested data when no includes provided")
+    void shouldReturnCityWithoutNestedDataWhenNoIncludes() {
+      List<City> allCities = indonesiaService.getCities(null, null);
+      assertFalse(allCities.isEmpty());
+
+      String cityCode = allCities.get(0).getCode();
+      City city = indonesiaService.getCity(cityCode, null);
+
+      assertNotNull(city);
+      assertEquals(cityCode, city.getCode());
+      assertNotNull(city.getName());
+      assertNull(city.getDistricts()); // Should not include districts
+    }
+
+    @Test
+    @DisplayName("Should return city with districts when districts included")
+    void shouldReturnCityWithDistrictsWhenDistrictsIncluded() {
+      List<City> allCities = indonesiaService.getCities(null, null);
+      assertFalse(allCities.isEmpty());
+
+      String cityCode = allCities.get(0).getCode();
+      City city = indonesiaService.getCity(cityCode, List.of("districts"));
+
+      assertNotNull(city);
+      assertEquals(cityCode, city.getCode());
+      assertNotNull(city.getDistricts()); // Should include districts
+
+      // Verify districts belong to this city
+      assertTrue(
+          city.getDistricts().stream()
+              .allMatch(district -> cityCode.equalsIgnoreCase(district.getCityCode())));
+
+      // Districts should not have villages yet
+      if (!city.getDistricts().isEmpty()) {
+        assertNull(city.getDistricts().get(0).getVillages());
+      }
+    }
+
+    @Test
+    @DisplayName("Should return city with districts and villages when both included")
+    void shouldReturnCityWithDistrictsAndVillagesWhenBothIncluded() {
+      List<City> allCities = indonesiaService.getCities(null, null);
+      assertFalse(allCities.isEmpty());
+
+      String cityCode = allCities.get(0).getCode();
+      City city = indonesiaService.getCity(cityCode, List.of("districts", "villages"));
+
+      assertNotNull(city);
+      assertEquals(cityCode, city.getCode());
+      assertNotNull(city.getDistricts());
+
+      if (!city.getDistricts().isEmpty()) {
+        District firstDistrict = city.getDistricts().get(0);
+        assertNotNull(firstDistrict.getVillages()); // Should include villages
+
+        // Verify villages belong to the district
+        assertTrue(
+            firstDistrict.getVillages().stream()
+                .allMatch(
+                    village ->
+                        firstDistrict.getCode().equalsIgnoreCase(village.getDistrictCode())));
+      }
+    }
+
+    @Test
+    @DisplayName("Should return null for non-existent city code")
+    void shouldReturnNullForNonExistentCityCode() {
+      City city = indonesiaService.getCity("999999", List.of("districts"));
+      assertNull(city);
+    }
+
+    @Test
+    @DisplayName("Should preserve original city properties")
+    void shouldPreserveOriginalCityProperties() {
+      List<City> allCities = indonesiaService.getCities(null, null);
+      assertFalse(allCities.isEmpty());
+
+      String cityCode = allCities.get(0).getCode();
+      City originalCity = allCities.get(0);
+      City retrievedCity = indonesiaService.getCity(cityCode, List.of("districts"));
+
+      assertEquals(originalCity.getCode(), retrievedCity.getCode());
+      assertEquals(originalCity.getName(), retrievedCity.getName());
+      assertEquals(originalCity.getLatitude(), retrievedCity.getLatitude());
+      assertEquals(originalCity.getLongitude(), retrievedCity.getLongitude());
+    }
+
+    @Test
+    @DisplayName("Should handle empty includes list")
+    void shouldHandleEmptyIncludesList() {
+      List<City> allCities = indonesiaService.getCities(null, null);
+      assertFalse(allCities.isEmpty());
+
+      String cityCode = allCities.get(0).getCode();
+      City city = indonesiaService.getCity(cityCode, List.of());
+
+      assertNotNull(city);
+      assertEquals(cityCode, city.getCode());
+      assertNull(city.getDistricts()); // Should not include districts
+    }
+  }
+
+  @Nested
+  @DisplayName("Individual District Retrieval Tests")
+  class DistrictRetrievalTests {
+
+    @Test
+    @DisplayName("Should return district without nested data when no includes provided")
+    void shouldReturnDistrictWithoutNestedDataWhenNoIncludes() {
+      List<District> allDistricts = indonesiaService.getDistricts(null, null);
+      assertFalse(allDistricts.isEmpty());
+
+      String districtCode = allDistricts.get(0).getCode();
+      District district = indonesiaService.getDistrict(districtCode, null);
+
+      assertNotNull(district);
+      assertEquals(districtCode, district.getCode());
+      assertNotNull(district.getName());
+      assertNull(district.getVillages()); // Should not include villages
+    }
+
+    @Test
+    @DisplayName("Should return district with villages when villages included")
+    void shouldReturnDistrictWithVillagesWhenVillagesIncluded() {
+      List<District> allDistricts = indonesiaService.getDistricts(null, null);
+      assertFalse(allDistricts.isEmpty());
+
+      String districtCode = allDistricts.get(0).getCode();
+      District district = indonesiaService.getDistrict(districtCode, List.of("villages"));
+
+      assertNotNull(district);
+      assertEquals(districtCode, district.getCode());
+      assertNotNull(district.getVillages()); // Should include villages
+
+      // Verify villages belong to this district
+      assertTrue(
+          district.getVillages().stream()
+              .allMatch(village -> districtCode.equalsIgnoreCase(village.getDistrictCode())));
+    }
+
+    @Test
+    @DisplayName("Should return null for non-existent district code")
+    void shouldReturnNullForNonExistentDistrictCode() {
+      District district = indonesiaService.getDistrict("999999999", List.of("villages"));
+      assertNull(district);
+    }
+
+    @Test
+    @DisplayName("Should preserve original district properties")
+    void shouldPreserveOriginalDistrictProperties() {
+      List<District> allDistricts = indonesiaService.getDistricts(null, null);
+      assertFalse(allDistricts.isEmpty());
+
+      String districtCode = allDistricts.get(0).getCode();
+      District originalDistrict = allDistricts.get(0);
+      District retrievedDistrict = indonesiaService.getDistrict(districtCode, List.of("villages"));
+
+      assertEquals(originalDistrict.getCode(), retrievedDistrict.getCode());
+      assertEquals(originalDistrict.getName(), retrievedDistrict.getName());
+      assertEquals(originalDistrict.getLatitude(), retrievedDistrict.getLatitude());
+      assertEquals(originalDistrict.getLongitude(), retrievedDistrict.getLongitude());
+    }
+
+    @Test
+    @DisplayName("Should ignore invalid includes parameters")
+    void shouldIgnoreInvalidIncludesParameters() {
+      List<District> allDistricts = indonesiaService.getDistricts(null, null);
+      assertFalse(allDistricts.isEmpty());
+
+      String districtCode = allDistricts.get(0).getCode();
+      District district =
+          indonesiaService.getDistrict(districtCode, List.of("villages", "invalid", "unknown"));
+
+      assertNotNull(district);
+      assertNotNull(district.getVillages()); // Should include villages
+    }
+
+    @Test
+    @DisplayName("Should handle empty includes list")
+    void shouldHandleEmptyIncludesList() {
+      List<District> allDistricts = indonesiaService.getDistricts(null, null);
+      assertFalse(allDistricts.isEmpty());
+
+      String districtCode = allDistricts.get(0).getCode();
+      District district = indonesiaService.getDistrict(districtCode, List.of());
+
+      assertNotNull(district);
+      assertEquals(districtCode, district.getCode());
+      assertNull(district.getVillages()); // Should not include villages
+    }
+  }
+
+  @Nested
+  @DisplayName("Nested Data Loading Integration Tests")
+  class NestedDataLoadingTests {
+
+    @Test
+    @DisplayName("Should load nested data consistently across different entry points")
+    void shouldLoadNestedDataConsistentlyAcrossDifferentEntryPoints() {
+      // Get a province with full hierarchy
+      List<Province> allProvinces = indonesiaService.getProvinces(null);
+      assertFalse(allProvinces.isEmpty());
+
+      String provinceCode = allProvinces.get(0).getCode();
+      Province provinceWithCities =
+          indonesiaService.getProvince(provinceCode, List.of("cities", "districts", "villages"));
+
+      if (!provinceWithCities.getCities().isEmpty()) {
+        City cityFromProvince = provinceWithCities.getCities().get(0);
+
+        // Get the same city directly
+        City cityDirect =
+            indonesiaService.getCity(cityFromProvince.getCode(), List.of("districts", "villages"));
+
+        // Compare district counts
+        assertEquals(cityFromProvince.getDistricts().size(), cityDirect.getDistricts().size());
+
+        // Compare first district's village count if districts exist
+        if (!cityFromProvince.getDistricts().isEmpty() && !cityDirect.getDistricts().isEmpty()) {
+          assertEquals(
+              cityFromProvince.getDistricts().get(0).getVillages().size(),
+              cityDirect.getDistricts().get(0).getVillages().size());
+        }
+      }
+    }
+
+    @Test
+    @DisplayName("Should maintain data integrity during parallel loading")
+    void shouldMaintainDataIntegrityDuringParallelLoading() {
+      List<Province> allProvinces = indonesiaService.getProvinces(null);
+      assertFalse(allProvinces.isEmpty());
+
+      String provinceCode = allProvinces.get(0).getCode();
+
+      // Load the same province multiple times concurrently to test thread safety
+      Province province1 =
+          indonesiaService.getProvince(provinceCode, List.of("cities", "districts", "villages"));
+      Province province2 =
+          indonesiaService.getProvince(provinceCode, List.of("cities", "districts", "villages"));
+
+      // Results should be consistent
+      assertEquals(province1.getCities().size(), province2.getCities().size());
+
+      if (!province1.getCities().isEmpty() && !province2.getCities().isEmpty()) {
+        assertEquals(
+            province1.getCities().get(0).getDistricts().size(),
+            province2.getCities().get(0).getDistricts().size());
+      }
+    }
+
+    @Test
+    @DisplayName("Should validate hierarchical relationships in loaded data")
+    void shouldValidateHierarchicalRelationshipsInLoadedData() {
+      List<Province> allProvinces = indonesiaService.getProvinces(null);
+      assertFalse(allProvinces.isEmpty());
+
+      String provinceCode = allProvinces.get(0).getCode();
+      Province province =
+          indonesiaService.getProvince(provinceCode, List.of("cities", "districts", "villages"));
+
+      // Validate the complete hierarchy
+      for (City city : province.getCities()) {
+        assertEquals(provinceCode, city.getProvinceCode());
+
+        if (city.getDistricts() != null) {
+          for (District district : city.getDistricts()) {
+            assertEquals(city.getCode(), district.getCityCode());
+
+            if (district.getVillages() != null) {
+              for (Village village : district.getVillages()) {
+                assertEquals(district.getCode(), village.getDistrictCode());
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }
